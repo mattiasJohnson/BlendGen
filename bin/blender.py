@@ -2,6 +2,7 @@ import bpy
 import sys
 import datetime
 import os
+import mathutils
 
 def importProp(prop_path):
     # Append objects to blend file's data (not linked to scene)
@@ -70,7 +71,7 @@ def createRenderDirectory(prop_name="", folder_name=None):
         
         # Confirm overwrite if directory already exists
         if os.path.exists(render_directory):
-            while (answer :=input(f"Directory {folder_name}/ already exists, continue and overwrite? (y/n): ").lower() ) not in {"y", "n"}: pass
+            while (answer :=input(f"Directory {folder_name}/ already exists, continue and overwrite? (Y/n): ").lower() ) not in {"y", "n", ""}: pass
             if answer == 'n':
                 print("Quitting.")
                 sys.exit(1)
@@ -79,14 +80,43 @@ def createRenderDirectory(prop_name="", folder_name=None):
             
         return render_directory
 
-def render(render_directory, n_images=1, resolution=[512,512]):
+class BlenderObject:
+    def __init__(self, obj):
+        self.obj = obj
+
+    def getPos(self):
+        return self.obj.location
+    
+    def setPos(self, new_location):
+        self.obj.location = new_location
+
+class Camera(BlenderObject):
+    def __init__(self, obj):
+        BlenderObject.__init__(self, obj)
+
+    def lookAt(self, position):
+        position = mathutils.Vector(position)  
+        look_direction = self.getPos() - position
+
+        self.obj.rotation_mode = 'QUATERNION'
+        self.obj.rotation_quaternion = look_direction.to_track_quat('Z', 'Y')
+
+def createCamera():
+    obj = bpy.data.objects["Camera"]
+    camera = Camera(obj)
+    return camera
+
+
+
+def render(render_directory, camera, n_images=1, resolution=[350,350]):
 
         # Setup camera
-        bpy.context.scene.camera = bpy.data.objects["Camera"] # Set camera as render camera
+        bpy.context.scene.camera = camera.obj # Set camera as render camera
         bpy.context.scene.render.resolution_x = resolution[0] # Set resolution width
         bpy.context.scene.render.resolution_y = resolution[1] # Set resolution height
 
         for i in range(n_images):
+            camera.lookAt((0,0,-1+0.5*i))
             ## Generate filepath
             filename = f"render{i+1:03}.png"
             filepath = render_directory + "/" + filename
@@ -121,5 +151,6 @@ if __name__ == "__main__":
 
 
     # Render
+    camera = createCamera()
     render_directory = createRenderDirectory(prop_name=prop_name, folder_name=folder_name)
-    render(render_directory, n_images=n_images)
+    render(render_directory, camera, n_images=n_images)
