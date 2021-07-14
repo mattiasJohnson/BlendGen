@@ -44,52 +44,82 @@ def importProp(prop_path):
 
     return imported_obj
 
-def render(resolution=[512,512]):
+def createRenderDirectory(prop_name="", folder_name=None):
+
+        # Create /renders base directory
+        render_base_path = bpy.path.abspath("//../renders/")
+        if not os.path.exists(render_base_path):
+            os.makedirs(render_base_path)
+        
+        # Create render directory
+        render_directory = ""
+        if folder_name:
+            render_directory = f"{render_base_path}{folder_name}"
+        else:
+            subfolders = [ f.name for f in os.scandir(render_base_path) if f.is_dir() ]
+            max_num = 0
+            for folder in subfolders:
+                if folder[0:6] == "render":
+                    num_string = folder[6:9].lstrip('0')
+                    num = int(num_string)
+                    if num > max_num:
+                        max_num = num
+            render_num = max_num + 1
+            current_date = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+            render_directory = f"{render_base_path}render{render_num:03d}_{prop_name}_{current_date}"
+        
+        # Confirm overwrite if directory already exists
+        if os.path.exists(render_directory):
+            while (answer :=input(f"Directory {folder_name}/ already exists, continue and overwrite? (y/n): ").lower() ) not in {"y", "n"}: pass
+            if answer == 'n':
+                print("Quitting.")
+                sys.exit(1)
+        else:
+            os.mkdir(render_directory)
+            
+        return render_directory
+
+def render(render_directory, n_images=1, resolution=[512,512]):
 
         # Setup camera
         bpy.context.scene.camera = bpy.data.objects["Camera"] # Set camera as render camera
         bpy.context.scene.render.resolution_x = resolution[0] # Set resolution width
         bpy.context.scene.render.resolution_y = resolution[1] # Set resolution height
 
-        # Save path
-        render_base_path = bpy.path.abspath("//../renders/")
+        for i in range(n_images):
+            ## Generate filepath
+            filename = f"render{i+1:03}.png"
+            filepath = render_directory + "/" + filename
+            ## Set savepath
+            bpy.context.scene.render.filepath = filepath
+            # Render image
+            bpy.ops.render.render(write_still=True)
 
-        ## Create render directory -> e.g: render023_current_datetime
-        subfolders = [ f.name for f in os.scandir(render_base_path) if f.is_dir() ]
-        max_num = 0
-        for folder in subfolders:
-            if folder[0:6] == "render":
-                num_string = folder[6:9].lstrip('0')
-                num = int(num_string)
-                if num > max_num:
-                    max_num = num
-        render_num = max_num + 1
-        current_date = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-        render_path = f"{render_base_path}render{render_num:03d}_{current_date}"
-        os.mkdir(render_path)
-
-        ## Generate savepath
-        filepath = render_path + "/" + "test.png"
-
-        ## Set savepath
-        bpy.context.scene.render.filepath = filepath
- 
-
-        # Render image
-        bpy.ops.render.render(write_still=True)
 
 if __name__ == "__main__":
     # Get all arguments after --
-    argv = sys.argv
-    argv = argv[argv.index("--") + 1:]
+    argv = sys.argv[sys.argv.index("--") + 1:]
+    prop_name = argv[0]
+    n_images = int(argv[1])
+    folder_name = argv[2] if len(argv) >=3 else None
 
-    # Get prop path
+    # Fix prop path for import
+    prop_path_rel = "props/" + prop_name
+    if prop_path_rel[-6:] != ".blend":
+        prop_path_rel = prop_path_rel + ".blend"
     dir_path = bpy.path.abspath("//../")
-    prop_path_rel = argv[0]
     prop_path = dir_path + prop_path_rel
 
     # Import prop
-    imported_obj = importProp(prop_path)
+    try:
+        imported_obj = importProp(prop_path)
+    except OSError:
+        print()
+        print("FILE NOT FOUND ERROR")
+        print(f"File {prop_path_rel} does not exist, quitting.")
+        quit()
+
 
     # Render
-    render()
+    render_directory = createRenderDirectory(prop_name=prop_name, folder_name=folder_name)
+    render(render_directory, n_images=n_images)
