@@ -3,6 +3,8 @@ import sys
 import datetime
 import os
 import mathutils
+import random
+import math
 
 def importProp(prop_path):
     # Append objects to blend file's data (not linked to scene)
@@ -11,8 +13,8 @@ def importProp(prop_path):
         print('Appended objects: ', data_to.objects)
 
     # Link objects (objects have to be linked to show up in the scene)
-    for obj in data_to.objects:
-        bpy.context.collection.objects.link(obj)
+    #for obj in data_to.objects:
+    #    bpy.context.collection.objects.link(obj)
 
     # Delete non-meshes (Cameras, light sources etc)
     bpy.ops.object.select_all(action='DESELECT')
@@ -21,6 +23,7 @@ def importProp(prop_path):
         if obj.type == "MESH":
             objs_to_join.append(obj)
         else:
+            bpy.context.collection.objects.link(obj) # Link object to select and delete
             obj.select_set(True)
     bpy.ops.object.delete()
     bpy.ops.object.select_all(action='DESELECT')
@@ -100,13 +103,41 @@ class Camera(BlenderObject):
 
         self.obj.rotation_mode = 'QUATERNION'
         self.obj.rotation_quaternion = look_direction.to_track_quat('Z', 'Y')
+    
+class Prop(BlenderObject):
+    def __init__(self, name_to_copy):
+        # Create copy
+        copy_obj = bpy.data.objects[name_to_copy]
+        obj = copy_obj.copy()
+        obj.data = copy_obj.data.copy()
+
+        # Add to scene
+        bpy.context.collection.objects.link(obj)
+        
+        # Initialise
+        BlenderObject.__init__(self, obj)
+        self.randomRotate()
+
+    def randomRotate(self):
+        x = random.random()*2*math.pi
+        y = random.random()*2*math.pi
+        z = random.random()*2*math.pi
+
+        self.obj.rotation_mode = "XYZ"
+        self.obj.rotation_euler = (x,y,z)
+
+
 
 def createCamera():
     obj = bpy.data.objects["Camera"]
     camera = Camera(obj)
     return camera
 
-
+def getRandomCoordinates(x_range, y_range, z_range):
+    x = random.uniform(x_range[0], x_range[1])
+    y = random.uniform(y_range[0], y_range[1])
+    z = random.uniform(z_range[0], z_range[1])
+    return (x, y, z)
 
 def render(render_directory, camera, n_images=1, resolution=[350,350]):
 
@@ -116,12 +147,17 @@ def render(render_directory, camera, n_images=1, resolution=[350,350]):
         bpy.context.scene.render.resolution_y = resolution[1] # Set resolution height
 
         for i in range(n_images):
-            camera.lookAt((0,0,-1+0.5*i))
-            ## Generate filepath
+            # Randomize camera position and direction
+            camera_coordinates = getRandomCoordinates((-4,4), (-4,4), (4,5))
+            look_coordinates = getRandomCoordinates((-2,2), (-2,2), (-4,-1))
+            camera.setPos(camera_coordinates)
+            camera.lookAt(look_coordinates)
+
+            ## Setup savepath
             filename = f"render{i+1:03}.png"
             filepath = render_directory + "/" + filename
-            ## Set savepath
             bpy.context.scene.render.filepath = filepath
+
             # Render image
             bpy.ops.render.render(write_still=True)
 
@@ -143,6 +179,11 @@ if __name__ == "__main__":
     # Import prop
     try:
         imported_obj = importProp(prop_path)
+        prop_list = []
+        for i in range(5):
+            prop = Prop(imported_obj.name)
+            prop.setPos((i,i,0))
+
     except OSError:
         print()
         print("FILE NOT FOUND ERROR")
