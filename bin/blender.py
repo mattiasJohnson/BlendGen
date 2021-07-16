@@ -5,6 +5,8 @@ import os
 import mathutils
 import random
 import math
+from math import sin, cos
+import numpy as np
 
 def importProp(prop_path):
     # Append objects to blend file's data (not linked to scene)
@@ -103,6 +105,16 @@ class Camera(BlenderObject):
 
         self.obj.rotation_mode = 'QUATERNION'
         self.obj.rotation_quaternion = look_direction.to_track_quat('Z', 'Y')
+        
+    def moveRandomSphere(self, center, r_min, r_max):
+        theta = random.random()*math.pi
+        phi = random.random()*2*math.pi
+        r = random.uniform(r_min, r_max)
+        random_coordinate = np.array((r*sin(phi)*cos(theta), r*sin(phi)*sin(theta), r*cos(phi)))
+        new_coordinate = random_coordinate + np.array(center)
+        
+        self.setPos(new_coordinate)
+
     
 class Prop(BlenderObject):
     def __init__(self, name_to_copy):
@@ -113,6 +125,12 @@ class Prop(BlenderObject):
 
         # Add to scene
         bpy.context.collection.objects.link(obj)
+        
+        # Center origin
+        bpy.ops.object.select_all(action='DESELECT')
+        obj.select_set(True)
+        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+        bpy.ops.object.select_all(action='DESELECT')
         
         # Initialise
         BlenderObject.__init__(self, obj)
@@ -126,7 +144,37 @@ class Prop(BlenderObject):
         self.obj.rotation_mode = "XYZ"
         self.obj.rotation_euler = (x,y,z)
 
+class Grid:
+    def __init__(self, n_spots):
+        self.n_spots = n_spots
+        self.side_length = 2
+        self.distance_to_edge = math.sqrt(3)/2 * self.side_length
 
+        # Get number of spots per side 
+        n_per_side = 1
+        while n_spots > n_per_side**3:
+            n_per_side += 1 
+            
+        # Create coordinate_list
+        center_coordinate = ((n_per_side-1)*self.side_length/2)
+        center = (center_coordinate, center_coordinate, center_coordinate)
+        coordinate_list = []
+        for i in range(n_per_side):
+            for j in range(n_per_side):
+                for k in range(n_per_side):
+                    coordinate =  (self.side_length * i, self.side_length* j, self.side_length * k)
+                    coordinate_list.append(coordinate)
+        
+        self.coordinate_list = coordinate_list
+        self.center = center
+        
+    def populate(self, obj_name_list, density):
+        for coordinate in self.coordinate_list:
+            if random.random() < density:
+                obj_name = random.choice(obj_name_list)
+                prop = Prop(obj_name)
+                prop.setPos(coordinate)
+                
 
 def createCamera():
     obj = bpy.data.objects["Camera"]
@@ -139,7 +187,7 @@ def getRandomCoordinates(x_range, y_range, z_range):
     z = random.uniform(z_range[0], z_range[1])
     return (x, y, z)
 
-def render(render_directory, camera, n_images=1, resolution=[350,350]):
+def render(render_directory, camera, grid, n_images=1, resolution=[350,350]):
 
         # Setup camera
         bpy.context.scene.camera = camera.obj # Set camera as render camera
@@ -148,10 +196,8 @@ def render(render_directory, camera, n_images=1, resolution=[350,350]):
 
         for i in range(n_images):
             # Randomize camera position and direction
-            camera_coordinates = getRandomCoordinates((-4,4), (-4,4), (4,5))
-            look_coordinates = getRandomCoordinates((-2,2), (-2,2), (-4,-1))
-            camera.setPos(camera_coordinates)
-            camera.lookAt(look_coordinates)
+            camera.moveRandomSphere(grid.center, grid.distance_to_edge, grid.distance_to_edge*1.1)
+            camera.lookAt(grid.center)
 
             ## Setup savepath
             filename = f"render{i+1:03}.png"
@@ -161,14 +207,7 @@ def render(render_directory, camera, n_images=1, resolution=[350,350]):
             # Render image
             bpy.ops.render.render(write_still=True)
 
-
-if __name__ == "__main__":
-    # Get all arguments after --
-    argv = sys.argv[sys.argv.index("--") + 1:]
-    prop_name = argv[0]
-    n_images = int(argv[1])
-    folder_name = argv[2] if len(argv) >=3 else None
-
+def run(prop_name, n_images, n_instances, folder_name):
     # Fix prop path for import
     prop_path_rel = "props/" + prop_name
     if prop_path_rel[-6:] != ".blend":
@@ -177,21 +216,30 @@ if __name__ == "__main__":
     prop_path = dir_path + prop_path_rel
 
     # Import prop
+    imported_obj = None
     try:
         imported_obj = importProp(prop_path)
-        prop_list = []
-        for i in range(5):
-            prop = Prop(imported_obj.name)
-            prop.setPos((i,i,0))
-
     except OSError:
         print()
         print("FILE NOT FOUND ERROR")
         print(f"File {prop_path_rel} does not exist, quitting.")
         quit()
 
+    # Create grid of objects
+    grid = Grid(n_instances)
+    grid.populate([imported_obj.name], 1)
 
     # Render
     camera = createCamera()
     render_directory = createRenderDirectory(prop_name=prop_name, folder_name=folder_name)
-    render(render_directory, camera, n_images=n_images)
+    render(render_directory, camera, grid, n_images=n_images)
+
+if __name__ == "__main__":
+    # Get all arguments after --
+    argv = sys.argv[sys.argv.index("--") + 1:]
+    prop_name = argv[0]
+    n_images = int(argv[1])
+    n_instances = int(argv[2])
+    folder_name = argv[3] if len(argv) >=4 else None
+    
+    run(prop_name, n_images, n_instances, folder_name)
