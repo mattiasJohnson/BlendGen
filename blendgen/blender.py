@@ -1,25 +1,18 @@
 import bpy
 import sys
-import datetime
 import os
 import mathutils
 import random
 import math
 from math import sin, cos
 import importlib
-
-
-import sys, os
-print("--------------",os.path.dirname(sys.executable))
-
-
 import numpy
 
 
 
-# dir = os.path.dirname(bpy.data.filepath)
-# if not dir in sys.path:
-#     sys.path.append(dir)
+dir = os.path.dirname(bpy.data.filepath)
+if not dir in sys.path:
+    sys.path.append(dir)
 
 import utils
 import blender_objects
