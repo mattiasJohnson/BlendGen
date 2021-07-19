@@ -24,6 +24,6 @@ if __name__ == "__main__":
     else:
         folder_name = ""
     
-    command =f"blender bin/basescene.blend --background --python bin/blender.py -- {prop_name} {n_renders} {n_instances} {folder_name}"
+    command =f"/Applications/Blender.app/Contents/MacOS/Blender blendgen/basescene.blend --background --python blendgen/blender.py -- {prop_name} {n_renders} {n_instances} {folder_name}"
     subprocess.run(command, shell=True)
     #subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
