@@ -12,7 +12,7 @@ def importProp(prop_path):
     # Append objects to blend file's data (not linked to scene)
     with bpy.data.libraries.load(prop_path) as (data_from, data_to):
         data_to.objects = [name for name in data_from.objects]
-        print('Appended objects: ', data_to.objects)
+        #print('Appended objects: ', data_to.objects)
 
     # Link objects (objects have to be linked to show up in the scene)
     #for obj in data_to.objects:
@@ -117,11 +117,12 @@ class Camera(BlenderObject):
 
     
 class Prop(BlenderObject):
-    def __init__(self, name_to_copy):
+    def __init__(self, name_to_copy, pass_index):
         # Create copy
         copy_obj = bpy.data.objects[name_to_copy]
         obj = copy_obj.copy()
         obj.data = copy_obj.data.copy()
+        obj.pass_index = pass_index
 
         # Add to scene
         bpy.context.collection.objects.link(obj)
@@ -143,6 +144,10 @@ class Prop(BlenderObject):
 
         self.obj.rotation_mode = "XYZ"
         self.obj.rotation_euler = (x,y,z)
+        
+    def setMaterial(self, material_name):
+        for idx, mat in enumerate(self.obj.data.materials):
+            self.obj.data.materials[idx] = bpy.data.materials.get(material_name)
 
 class Grid:
     def __init__(self, n_spots):
@@ -168,13 +173,72 @@ class Grid:
         self.coordinate_list = coordinate_list
         self.center = center
         
-    def populate(self, obj_name_list, density):
-        for coordinate in self.coordinate_list:
-            if random.random() < density:
-                obj_name = random.choice(obj_name_list)
-                prop = Prop(obj_name)
-                prop.setPos(coordinate)
+    def populate(self, obj_name_list, n_instances):
+        for idx in range(n_instances):
+            obj_name = random.choice(obj_name_list)
+            coordinate = self.coordinate_list[idx]
+            prop = Prop(obj_name, idx)
+            prop.setMaterial("segmentation_material")
+            prop.setPos(coordinate)
+            
                 
+                
+def createMaterial(n_instances):
+    # Create material
+    material = bpy.data.materials.new("segmentation_material")
+    material["is_auto"] = True
+    material.use_nodes = True
+
+    # Nodes
+    nodes = material.node_tree.nodes
+    nodes.clear()
+    step_size = 1/n_instances
+    sep = 3 # Visual separation
+
+    # Object Info node
+    node_info = material.node_tree.nodes.new("ShaderNodeObjectInfo")
+    node_info.location = (-300 * sep, 100)
+
+    # Value node
+    node_value = material.node_tree.nodes.new("ShaderNodeValue")
+    node_value.location = (-300 * sep, -100)
+    node_value.outputs[0].default_value = step_size
+
+    # Math node
+    node_math = material.node_tree.nodes.new("ShaderNodeMath")
+    node_math.location = (-200 * sep, 0)
+    node_math.operation = 'MULTIPLY_ADD'
+    node_math.inputs[2].default_value = step_size/2
+
+    # ColorRamp node
+    node_ramp = material.node_tree.nodes.new("ShaderNodeValToRGB")
+    node_ramp.location = (-100 * sep, 0)
+    node_ramp.color_ramp.color_mode = 'RGB'
+    node_ramp.color_ramp.interpolation = 'CONSTANT'
+    # Split ColorRamp
+    step_size = 1/n_instances
+    for i in range(1,n_instances): # For three objects **two** splits are needed
+        node_ramp.color_ramp.elements.new(step_size*i)
+        
+    for i in range(0,n_instances):
+        node_ramp.color_ramp.elements[i].color = (random.random(), random.random(), random.random(), 1)
+
+    # Shader node
+    node_shader = nodes.new('ShaderNodeEmission')
+    node_shader.location = (0,0)
+
+    # Material Output node
+    node_output = nodes.new("ShaderNodeOutputMaterial")
+    node_output.location = (100*sep,0)
+
+    # Create connections between nodes
+    material.node_tree.links.new(node_info.outputs['Object Index'], node_math.inputs[0] )
+    material.node_tree.links.new(node_value.outputs['Value'], node_math.inputs[1] )
+    material.node_tree.links.new(node_math.outputs['Value'], node_ramp.inputs['Fac'])
+    material.node_tree.links.new(node_ramp.outputs['Color'], node_shader.inputs['Color'])
+    material.node_tree.links.new(node_shader.outputs['Emission'], node_output.inputs['Surface'])
+    
+    return material
 
 def createCamera():
     obj = bpy.data.objects["Camera"]
@@ -196,7 +260,7 @@ def render(render_directory, camera, grid, n_images=1, resolution=[350,350]):
 
         for i in range(n_images):
             # Randomize camera position and direction
-            camera.moveRandomSphere(grid.center, grid.distance_to_edge, grid.distance_to_edge*1.1)
+            camera.moveRandomSphere(grid.center, grid.distance_to_edge*1.5, grid.distance_to_edge*2)
             camera.lookAt(grid.center)
 
             ## Setup savepath
@@ -225,9 +289,11 @@ def run(prop_name, n_images, n_instances, folder_name):
         print(f"File {prop_path_rel} does not exist, quitting.")
         quit()
 
+    material = createMaterial(n_instances)
+
     # Create grid of objects
     grid = Grid(n_instances)
-    grid.populate([imported_obj.name], 1)
+    grid.populate([imported_obj.name], n_instances)
 
     # Render
     camera = createCamera()
