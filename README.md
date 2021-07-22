@@ -1,9 +1,12 @@
 # Install
 `git clone https://github.com/mattiasJohnson/BlendGen.git`
+
 `cd BlendGen`
+
 `python -m pip install .`
 
 For developing:
+
 `python -m pip install --editable .`
 
 
