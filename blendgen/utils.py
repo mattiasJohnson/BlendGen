@@ -4,6 +4,10 @@ import os
 import datetime
 
 
+def newScene():
+    bpy.ops.scene.new(type="EMPTY") 
+
+
 def deleteScene():
     for obj in bpy.context.scene.objects: 
         if obj.name[-1].isdigit() == True: 
@@ -63,7 +67,6 @@ def importProp(prop_path):
     imported_obj.dimensions = imported_obj.dimensions/max(imported_obj.dimensions)
 
     return imported_obj
-
 
 
 def createRenderDirectory(prop_name="", folder_name=None):

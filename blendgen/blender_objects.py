@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, List
 import bpy
 import mathutils
 import random
@@ -7,7 +7,7 @@ import numpy as np
 
 
 class BlenderObject:
-    """A superclass with utility functions for use in more specific subclasses"""
+    """A superclass with utility functions for blender objects for use in more specific subclasses"""
 
     def __init__(self, name: str) -> None:
         self.name = name
@@ -91,25 +91,16 @@ class Light(BlenderObject):
         self.object = bpy.data.objects.new(self.name, self.data)
 
         self.data.energy = energy
-        self.move(abs_vec = position)
+        self.move_abs_cartesian(position)
         bpy.context.scene.collection.objects.link(self.object) 
 
     def random_energy(self, span: Tuple[float]) -> None:
-        energy = np.random.rand() * (span[1]-span[0])+span[0]
+        energy = np.random.rand() * (span[1] - span[0]) + span[0]
         self.setEnergy(energy)
 
 
 class Prop(BlenderObject):
     def __init__(self, name: str) -> None:
-        BlenderObject.__init__(self, name)
-        template_object = bpy.data.objects[name] # object to duplicate
-        self.object = template_object.copy()
-        self.object.data= template_object.data.copy()
-        bpy.context.collection.objects.link(self.object) # was need for adding it to the scene
-                
-
-class Prop(BlenderObject):
-    def __init__(self, name):
         
         BlenderObject.__init__(self, name)
         template_object = bpy.data.objects[name] # object to duplicate
@@ -125,15 +116,13 @@ class Prop(BlenderObject):
         
         # Initialise
         self.rotate_random()
-        
-        
 
 
 class Grid:
-    def __init__(self, n_spots):
+    def __init__(self, n_spots: int) -> None:
         self.n_spots = n_spots
         self.side_length = 2
-        self.distance_to_edge = math.sqrt(3)/2 * self.side_length
+        self.distance_to_edge = math.sqrt(3) / 2 * self.side_length
 
         # Get number of spots per side 
         n_per_side = 1
@@ -141,23 +130,21 @@ class Grid:
             n_per_side += 1 
             
         # Create coordinate_list
-        center_coordinate = ((n_per_side-1)*self.side_length/2)
+        center_coordinate = ((n_per_side - 1) * self.side_length / 2)
         center = (center_coordinate, center_coordinate, center_coordinate)
         coordinate_list = []
         for i in range(n_per_side):
             for j in range(n_per_side):
                 for k in range(n_per_side):
-                    coordinate =  (self.side_length * i, self.side_length* j, self.side_length * k)
+                    coordinate =  (self.side_length * i, self.side_length * j, self.side_length * k)
                     coordinate_list.append(coordinate)
         
         self.coordinate_list = coordinate_list
         self.center = center
         
-    def populate(self, obj_name_list, density):
+    def populate(self, obj_name_list: List[str], density: float) -> None:
         for coordinate in self.coordinate_list:
             if random.random() < density:
                 obj_name = random.choice(obj_name_list)
                 prop = Prop(obj_name)
                 prop.move_abs_cartesian(coordinate)
-
-

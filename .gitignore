@@ -1,1 +1,6 @@
 renders/*
+.DS_Store
+*.ipynb_checkpoints/
+*__pycache__*
+env_blendgen/
+blendgen.egg-info/
