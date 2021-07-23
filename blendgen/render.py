@@ -11,6 +11,8 @@ def render(render_directory, camera, grid, n_images=1, resolution=[350,350]):
     bpy.context.scene.render.resolution_x = resolution[0] # Set resolution width
     bpy.context.scene.render.resolution_y = resolution[1] # Set resolution height
     
+    print()
+    print(f"Generating {n_images} renders in {render_directory}.")
     printProgressBar(0, n_images, prefix = 'Progress:', suffix = 'Complete', length = 50) 
 
     for i in range(n_images):
