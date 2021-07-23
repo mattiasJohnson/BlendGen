@@ -100,12 +100,14 @@ class Light(BlenderObject):
 
 
 class Prop(BlenderObject):
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, segmentation_idx: int) -> None:
         
         BlenderObject.__init__(self, name)
-        template_object = bpy.data.objects[name] # object to duplicate
-        self.object = template_object.copy()
-        self.object.data= template_object.data.copy()
+        self.template_object = bpy.data.objects[name] # object to duplicate
+        self.object = self.template_object.copy()
+        self.object.data= self.template_object.data.copy()
+        self.object.pass_index = segmentation_idx
+
         bpy.context.collection.objects.link(self.object) # was need for adding it to the scene
         
         # Center origin
@@ -116,6 +118,10 @@ class Prop(BlenderObject):
         
         # Initialise
         self.rotate_random()
+
+    def setMaterial(self, material_name):
+        for idx in range(len(self.object.data.materials)):
+            self.object.data.materials[idx] = bpy.data.materials.get(material_name) 
 
 
 class Grid:
@@ -142,9 +148,10 @@ class Grid:
         self.coordinate_list = coordinate_list
         self.center = center
         
-    def populate(self, obj_name_list: List[str], density: float) -> None:
-        for coordinate in self.coordinate_list:
-            if random.random() < density:
-                obj_name = random.choice(obj_name_list)
-                prop = Prop(obj_name)
-                prop.move_abs_cartesian(coordinate)
+    def populate(self, obj_name_list: List[str], n_instances: int) -> None:
+        for idx in range(n_instances):
+            coordinate = self.coordinate_list[idx]
+            obj_name = random.choice(obj_name_list)
+            prop = Prop(obj_name, idx)
+            prop.setMaterial("segmentation_material")
+            prop.move_abs_cartesian(coordinate)

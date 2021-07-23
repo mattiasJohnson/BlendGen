@@ -2,6 +2,7 @@ import bpy
 import random
 import os
 import datetime
+import sys
 
 
 def newScene():
@@ -68,6 +69,67 @@ def importProp(prop_path):
 
     return imported_obj
 
+def createSegmentationMaterial(n_instances: int) -> bpy.types.Material:
+    
+    if n_instances >= 32:
+        print("ERROR: Colorband cannot have 32 or more classes, setting to 31")
+        n_instances = 31
+
+    # Create material
+    material = bpy.data.materials.new("segmentation_material")
+    material["is_auto"] = True
+    material.use_nodes = True
+
+    # Nodes
+    nodes = material.node_tree.nodes
+    nodes.clear()
+    step_size = 1/n_instances
+    sep = 3 # Visual separation
+
+    # Object Info node
+    node_info = material.node_tree.nodes.new("ShaderNodeObjectInfo")
+    node_info.location = (-300 * sep, 100)
+
+    # Value node
+    node_value = material.node_tree.nodes.new("ShaderNodeValue")
+    node_value.location = (-300 * sep, -100)
+    node_value.outputs[0].default_value = step_size
+
+    # Math node
+    node_math = material.node_tree.nodes.new("ShaderNodeMath")
+    node_math.location = (-200 * sep, 0)
+    node_math.operation = 'MULTIPLY_ADD'
+    node_math.inputs[2].default_value = step_size/2
+
+    # ColorRamp node
+    node_ramp = material.node_tree.nodes.new("ShaderNodeValToRGB")
+    node_ramp.location = (-100 * sep, 0)
+    node_ramp.color_ramp.color_mode = 'RGB'
+    node_ramp.color_ramp.interpolation = 'CONSTANT'
+    # Split ColorRamp
+    step_size = 1/n_instances
+    for i in range(1,n_instances): # For three objects **two** splits are needed
+        node_ramp.color_ramp.elements.new(step_size*i)
+        
+    for i in range(0,n_instances):
+        node_ramp.color_ramp.elements[i].color = (random.random(), random.random(), random.random(), 1)
+
+    # Shader node
+    node_shader = nodes.new('ShaderNodeEmission')
+    node_shader.location = (0,0)
+
+    # Material Output node
+    node_output = nodes.new("ShaderNodeOutputMaterial")
+    node_output.location = (100*sep,0)
+
+    # Create connections between nodes
+    material.node_tree.links.new(node_info.outputs['Object Index'], node_math.inputs[0] )
+    material.node_tree.links.new(node_value.outputs['Value'], node_math.inputs[1] )
+    material.node_tree.links.new(node_math.outputs['Value'], node_ramp.inputs['Fac'])
+    material.node_tree.links.new(node_ramp.outputs['Color'], node_shader.inputs['Color'])
+    material.node_tree.links.new(node_shader.outputs['Emission'], node_output.inputs['Surface'])
+    
+    return material
 
 def createRenderDirectory(prop_name="", folder_name=None):
 

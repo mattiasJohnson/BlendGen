@@ -11,7 +11,7 @@ import importlib
 import numpy
 
 from .blender_objects import Camera, Grid, Light
-from .utils import deleteScene, importProp, createRenderDirectory, newScene
+from .utils import createSegmentationMaterial, deleteScene, importProp, createRenderDirectory, newScene
 from .render import render
 
 
@@ -28,12 +28,13 @@ def generate(prop_path, n_images, n_instances, render_directory):
     except OSError:
         print()
         print("FILE NOT FOUND ERROR")
-        print(f"File {prop_path_rel} does not exist, quitting.")
+        print(f"File {prop_path} does not exist, quitting.")
         quit()
 
     # Create grid of objects
+    createSegmentationMaterial(n_instances)
     grid = Grid(n_instances)
-    grid.populate([imported_obj.name], 1)
+    grid.populate([imported_obj.name], n_instances)
 
     # Render
     camera = Camera("test_camera")
