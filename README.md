@@ -1,18 +1,29 @@
-# Install
-`git clone https://github.com/mattiasJohnson/BlendGen.git`
+# BlendGen
+Generate image data from blender models.
 
-`cd BlendGen`
+## Install
 
-`python -m pip install .`
+```
+git clone https://github.com/mattiasJohnson/BlendGen.git
+```
 
-For developing:
+```
+cd BlendGen
+```
 
-`python -m pip install --editable .`
+```
+python -m pip install --editable .
+```
 
 
-# How to run
-`blendgen --file=alien --folder=[PATH TO RENDER DIRECTORY]`
+## How to run
 
+Example:
+```
+blendgen
+```
 
-
-Note that 3d-models have to be located in `props/`.
+With flags:
+```
+blendgen --prop-path=. --save-path=. --save-name=test_name --n-images=1 --n-instances=1
+```
