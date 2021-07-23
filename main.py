@@ -56,8 +56,8 @@ def main():
     prop_path = args["prop_path"]
     save_path = args["save_path"]
     save_name = args["save_name"]
-    n_images = args["n_images"]
-    n_instances = args["n_instances"]
+    n_images = int(args["n_images"])
+    n_instances = int(args["n_instances"])
 
     
     # Make assertions on arguments

@@ -27,3 +27,8 @@ With flags:
 ```
 blendgen --prop-path=. --save-path=. --save-name=test_name --n-images=1 --n-instances=1
 ```
+
+
+## Example images
+![Rendered image](example_render.png)
+![Segmentation of image](example_render_seg.png)
