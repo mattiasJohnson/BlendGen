@@ -27,13 +27,19 @@ def main():
                         default = SAVED_PROP_PATH
                        )
     parser.add_argument("--save-path", 
-                        "-s", 
-                        help = "(Optional) Path to directory where to save renders. \
+                        "-P", 
+                        help = "(Optional) Path to directory where to save generated directory. \
                             Default is directory where script wass run.", 
                         default = "."
                        )
+    parser.add_argument("--save-name", 
+                        "-N", 
+                        help = "(Optional) Name of generated directory. \
+                            Default is timestamp.", 
+                        default = SAVE_DIR_NAME
+                       )
     parser.add_argument("--n-images",
-                        "-r", 
+                        "-n", 
                         help = "Number of images to generate. Default is 1.", 
                         default = 1
                        )
@@ -49,8 +55,10 @@ def main():
 
     prop_path = args["prop_path"]
     save_path = args["save_path"]
+    save_name = args["save_name"]
     n_images = args["n_images"]
     n_instances = args["n_instances"]
+
     
     # Make assertions on arguments
     if os.path.isdir(prop_path):
@@ -67,7 +75,7 @@ def main():
     
     
     # Create save directories
-    save_dir_path = os.path.join(save_path, SAVE_DIR_NAME)
+    save_dir_path = os.path.join(save_path, save_name)
     renders_path = os.path.join(save_dir_path, "renders")
     labels_path = os.path.join(save_dir_path, "labels")
     os.mkdir(save_dir_path)
