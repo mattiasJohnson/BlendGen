@@ -8,12 +8,29 @@ if not THIS_DIR in sys.path:
 import blendgen
 
 
-if __name__ == "__main__":
+def main():
     # Get all arguments after --
     argv = sys.argv[sys.argv.index("--") + 1:]
-    prop_name = argv[0]
-    n_images = int(argv[1])
-    n_instances = int(argv[2])
-    folder_name = argv[3] if len(argv) >=4 else None
+    prop_path = argv[0]
+    save_path = argv[1]
+    n_images = int(argv[2])
+    n_instances = int(argv[3])
     
-    blendgen.generate(prop_name, n_images, n_instances, folder_name)
+    prop_paths = load_prop_paths(prop_path)
+    
+    blendgen.generate(prop_paths, save_path, n_images, n_instances)
+    
+
+def load_prop_paths(prop_dir_path):
+    prop_paths = {}
+    for filename in os.listdir(prop_dir_path):
+        if filename.endswith(".blend"):
+            filepath = os.path.join(prop_dir_path, filename)
+            prop_name = filename[:-6]
+            prop_paths[prop_name] = filepath
+    
+    return prop_paths
+
+
+if __name__ == "__main__":
+    main()

@@ -15,7 +15,9 @@ from .utils import createSegmentationMaterial, deleteScene, importProp, createRe
 from .render import render
 
 
-def generate(prop_path, n_images, n_instances, render_directory):
+def generate(prop_paths, save_path, n_images, n_instances):
+    prop_path = list(prop_paths.values())[0]
+    render_directory = os.path.join(save_path, "renders")
     
     newScene() 
     
