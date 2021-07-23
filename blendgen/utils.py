@@ -28,6 +28,7 @@ def getRandomCoordinates(x_range, y_range, z_range):
 
 
 def importProp(prop_path):
+    old = redirectOutputStart()
     # Append objects to blend file's data (not linked to scene)
     with bpy.data.libraries.load(prop_path) as (data_from, data_to):
         data_to.objects = [name for name in data_from.objects]
@@ -66,6 +67,8 @@ def importProp(prop_path):
 
     # Resize prop
     imported_obj.dimensions = imported_obj.dimensions/max(imported_obj.dimensions)
+    
+    redirectOutputEnd(old)
 
     return imported_obj
 
@@ -167,3 +170,39 @@ def createRenderDirectory(prop_name="", folder_name=None):
         return render_directory
     
     
+# Redirect output (https://blender.stackexchange.com/a/44563/69661)
+def redirectOutputStart():
+    logfile = '.blenderlog'
+    open(logfile, 'a').close()
+    old = os.dup(1)
+    sys.stdout.flush()
+    os.close(1)
+    os.open(logfile, os.O_WRONLY)
+    return old
+
+def redirectOutputEnd(old) -> None:
+    os.close(1)
+    os.dup(old)
+    os.close(old)
+    
+# Print iterations progress (https://stackoverflow.com/questions/3173320/text-progress-bar-in-the-console)
+def printProgressBar(iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
+    """
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+    # Print New Line on Complete
+    if iteration == total: 
+        print()
