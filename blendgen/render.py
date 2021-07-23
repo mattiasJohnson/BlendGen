@@ -21,3 +21,15 @@ def render(render_directory, camera, grid, n_images=1, resolution=[350,350]):
 
         # Render image
         bpy.ops.render.render(write_still=True)
+        
+        # Segmentation
+        for prop in grid.prop_list:
+            prop.setMaterial("segmentation_material")
+        segmentation_filename = f"render{i+1:03}_segmentation.png"
+        segmentation_filepath = render_directory + "/" + segmentation_filename
+        bpy.context.scene.render.filepath = segmentation_filepath
+        bpy.ops.render.render(write_still=True)
+
+        # Restore materials
+        for prop in grid.prop_list:
+            prop.restoreMaterial()

@@ -20,6 +20,11 @@ def generate(prop_path, n_images, n_instances, render_directory):
     newScene() 
     
     light = Light("test_light")
+    light.data.energy = 80
+
+    light2 = Light("test_light_2")
+    light2.data.energy = 80
+    light2.move_rel_cartesian((3,1,0))
 
     # Import prop
     imported_obj = None

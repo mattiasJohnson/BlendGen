@@ -96,7 +96,7 @@ class Light(BlenderObject):
 
     def random_energy(self, span: Tuple[float]) -> None:
         energy = np.random.rand() * (span[1] - span[0]) + span[0]
-        self.setEnergy(energy)
+        self.data.energy = energy
 
 
 class Prop(BlenderObject):
@@ -119,9 +119,13 @@ class Prop(BlenderObject):
         # Initialise
         self.rotate_random()
 
-    def setMaterial(self, material_name):
+    def setMaterial(self, material_name: str) -> None:
         for idx in range(len(self.object.data.materials)):
             self.object.data.materials[idx] = bpy.data.materials.get(material_name) 
+            
+    def restoreMaterial(self) -> None:
+        for idx in range(len(self.object.data.materials)):
+            self.object.data.materials[idx] = self.template_object.data.materials[idx] 
 
 
 class Grid:
@@ -129,6 +133,7 @@ class Grid:
         self.n_spots = n_spots
         self.side_length = 2
         self.distance_to_edge = math.sqrt(3) / 2 * self.side_length
+        self.prop_list = []
 
         # Get number of spots per side 
         n_per_side = 1
@@ -153,5 +158,5 @@ class Grid:
             coordinate = self.coordinate_list[idx]
             obj_name = random.choice(obj_name_list)
             prop = Prop(obj_name, idx)
-            prop.setMaterial("segmentation_material")
             prop.move_abs_cartesian(coordinate)
+            self.prop_list.append(prop)
