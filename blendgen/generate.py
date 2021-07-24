@@ -21,6 +21,14 @@ def generate(prop_paths, save_path, n_images, n_instances):
     
     newScene() 
     
+    
+    resolution = (400, 400)
+    bpy.context.scene.render.resolution_x = resolution[0] # Set resolution width
+    bpy.context.scene.render.resolution_y = resolution[1] # Set resolution height
+
+    
+    
+    
     light = Light("test_light")
     light.data.energy = 80
 
@@ -29,14 +37,14 @@ def generate(prop_paths, save_path, n_images, n_instances):
     light2.move_rel_cartesian((3,1,0))
 
     # Import prop
-    imported_obj = None
-    try:
-        imported_obj = importProp(prop_path)
-    except OSError:
-        print()
-        print("FILE NOT FOUND ERROR")
-        print(f"File {prop_path} does not exist, quitting.")
-        quit()
+#     imported_obj = None
+#     try:
+    imported_obj = importProp(prop_path)
+#     except OSError:
+#         print()
+#         print("FILE NOT FOUND ERROR")
+#         print(f"File {prop_path} does not exist, quitting.")
+#         quit()
 
     # Create grid of objects
     createSegmentationMaterial(n_instances)
@@ -46,4 +54,29 @@ def generate(prop_paths, save_path, n_images, n_instances):
     # Render
     camera = Camera("test_camera")
     
-    render(render_directory, camera, grid, n_images=n_images)
+    render(render_directory, camera, grid, n_images=n_images, resolution=resolution)
+
+    
+    
+    
+# def setup_scene(prop_templates, num_props):
+
+#     print("\n--------------------")
+#     bg.newScene()
+#     resolution = (400, 400)
+    
+#     # Setup camera
+#     camera = bg.Camera("my_camera")
+#     camera.rotate((90,0,0))
+#     camera.move_abs_cartesian((0,-5,0))
+    
+    
+#     angles_of_view = camera.get_angles_of_view(resolution)
+
+ 
+#     for i in range(num_props):
+#         prop_name = random.choice(list(prop_templates.values())) 
+#         prop = bg.Prop(prop_name)
+#         point = camera.get_random_visible_point(angles_of_view, 5, 8, resolution)
+#         prop.move_abs_cartesian(point)
+#         #prop.rotate_random()

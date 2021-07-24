@@ -11,10 +11,7 @@ def newScene():
 
 def deleteScene():
     for obj in bpy.context.scene.objects: 
-        if obj.name[-1].isdigit() == True: 
-            obj.select_set(True)
-        else: 
-            obj.select_set(False)
+        obj.select_set(True)
 
     bpy.ops.object.delete()
     bpy.ops.object.select_all(action='DESELECT')

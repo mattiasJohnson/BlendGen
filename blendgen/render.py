@@ -4,12 +4,12 @@ import sys
 from .utils import redirectOutputStart, redirectOutputEnd, printProgressBar
 
 
-def render(render_directory, camera, grid, n_images=1, resolution=[350,350]):
+def render(render_directory, camera, grid, n_images=1):
 
     # Setup camera
     bpy.context.scene.camera = camera.object # Set camera as render camera
-    bpy.context.scene.render.resolution_x = resolution[0] # Set resolution width
-    bpy.context.scene.render.resolution_y = resolution[1] # Set resolution height
+#     bpy.context.scene.render.resolution_x = resolution[0] # Set resolution width
+#     bpy.context.scene.render.resolution_y = resolution[1] # Set resolution height
     
     print()
     print(f"Generating {n_images} renders in {render_directory}.")

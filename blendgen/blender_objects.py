@@ -41,10 +41,17 @@ class BlenderObject:
             phi = radians(phi)
             self.set_loc((r*math.sin(phi)*math.cos(theta), r*math.sin(phi)*math.sin(theta), r*math.cos(phi)))
 
-    def rotate(self, angles: Tuple[float]) -> None:
+    def rotate(self, angles: Tuple[float, float, float]) -> None:
+        conv = np.pi / 180
+        angles = [angles[0] * conv, angles[1] * conv, angles[2] * conv]
+        self.rotate_radians(angles)
+        
+    def rotate_radians(self, angles: Tuple[float, float, float]) -> None:
         self.object.rotation_mode = "XYZ"
         x, y, z = angles
         self.object.rotation_euler = (x, y, z)
+
+        
 
     def move_abs_spherical_random(self, center, r_min, r_max) -> None:
         theta = random.random()*math.pi
@@ -58,7 +65,7 @@ class BlenderObject:
         x = random.random() * 2 * math.pi
         y = random.random() * 2 * math.pi
         z = random.random() * 2 * math.pi
-        self.rotate((x, y, z))
+        self.rotate_radians((x, y, z))
 
     def look_at(self, point: Tuple[float]) -> None:
         point = mathutils.Vector(point)  
@@ -80,7 +87,79 @@ class Camera(BlenderObject):
  
     def random_lens(self, span: float) -> None:
         length = random.uniform(span[0], span[1])
-        self.setLens(length)        
+        self.setLens(length)
+        
+    def get_parameters(self, resolution):
+        
+        # Calculate intrinsic matrix
+        assert bpy.context.scene.render.resolution_percentage == 100 # assume image is not scaled
+        assert self.data.sensor_fit != 'VERTICAL' # assume angles describe the horizontal field of view
+        f_in_mm = self.data.lens
+        sensor_width_in_mm = self.data.sensor_width
+        w = resolution[0]
+        h = resolution[1]
+        pixel_aspect = bpy.context.scene.render.pixel_aspect_y / bpy.context.scene.render.pixel_aspect_x
+        f_x = f_in_mm / (sensor_width_in_mm / w)
+        f_y = f_x * pixel_aspect
+        c_x = w * (0.5 - self.data.shift_x)
+        c_y = h * 0.5 + w * self.data.shift_y
+        intrinsic = np.array([[f_x, 0, c_x],[0, f_y, c_y],[0,   0,   1]])
+        
+        extrinsic = np.array(self.object.matrix_world)
+
+        return extrinsic, intrinsic
+    
+    def get_visible_quadron(self, min_radius: float, max_radius: float, resolution: Tuple[int, int]) -> np.ndarray:
+        extrinsic, intrinsic = self.get_parameters(resolution)
+        extrinsic_homogeneous = extrinsic[:3]
+        inv_intrinsic_mult_extrinsic = np.linalg.pinv(np.matmul(intrinsic, extrinsic_homogeneous))
+        corners_pixel = np.array([[0, 0], [0, resolution[1]], [resolution[0], 0], [resolution[0], resolution[1]]])
+
+        corners = np.array([
+            [self.get_3d_projection(inv_intrinsic_mult_extrinsic, corner_pixel, radius) for corner_pixel in corners_pixel]
+            for radius in [min_radius, max_radius]
+        ])
+
+        return corners
+
+    def get_3d_projection(self, inv_intrinsic_mult_extrinsic: np.ndarray, coo_pixel: np.ndarray, radius: float) -> np.ndarray:
+        coo_pixel_homogeneous = np.append(coo_pixel, 1)
+        coordinate_cartesian = radius * np.matmul(inv_intrinsic_mult_extrinsic, coo_pixel_homogeneous)[:3]
+        return coordinate_cartesian
+    
+    def get_angles_of_view(self, resolution):
+        radius = 10
+        extrinsic, intrinsic = self.get_parameters(resolution)
+        extrinsic_homogeneous = extrinsic[:3]
+        inv_intrinsic_mult_extrinsic = np.linalg.pinv(np.matmul(intrinsic, extrinsic_homogeneous))
+        point = self.get_3d_projection(inv_intrinsic_mult_extrinsic, resolution, radius)
+        vertical_angle = np.tan(point[0]/radius)
+        horizontal_angle = np.tan(point[1]/radius)
+
+        return (vertical_angle, horizontal_angle)
+    
+    def get_random_visible_point(self, angles_of_view, min_radius, max_radius, resolution) -> np.ndarray:
+        angle_vertical = random.uniform(-angles_of_view[0], angles_of_view[0])        
+        angle_horizontal = random.uniform(-angles_of_view[1], angles_of_view[1])
+        radius = random.uniform(min_radius, max_radius)
+        
+        coordinate_camera = np.array((
+            np.arctan(angle_horizontal)*radius, 
+            np.arctan(angle_vertical)*radius, 
+            -radius,
+        ))
+        
+        location, rotation = self.object.matrix_world.decompose()[0:2]
+        location = np.array(location)
+        rotation = -1 * np.array(rotation.to_matrix())
+        
+        coordinate_rotated = np.matmul(-1*rotation, coordinate_camera)
+        coordinate_translated = coordinate_rotated + location
+
+        return coordinate_translated
+
+
+    
 
 
 class Light(BlenderObject):
@@ -100,7 +179,7 @@ class Light(BlenderObject):
 
 
 class Prop(BlenderObject):
-    def __init__(self, name: str, segmentation_idx: int) -> None:
+    def __init__(self, name: str, segmentation_idx: int = 0) -> None:
         
         BlenderObject.__init__(self, name)
         self.template_object = bpy.data.objects[name] # object to duplicate

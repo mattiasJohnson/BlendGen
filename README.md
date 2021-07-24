@@ -29,21 +29,22 @@ blendgen --prop-path=. --save-path=. --save-name=test_name --n-images=1 --n-inst
 ```
 
 
-## How to use package modules inside Blenders scripting space
+## How to use blendgen modules inside Blenders scripting space
 
-#### Install blendgen in Blenders bundled Python distribution
+#### Install blendgen with Blenders bundled Python distribution
 
 ```
-[PATH TO BLENDER]/Contents/Resources/2.93/python/bin/python3.9 -m pip install --editable [PATH TO BlendGen directory]
+[PATH TO BLENDER]/Contents/Resources/2.93/python/bin/python3.9 \
+-m pip install --editable [PATH TO BlendGen directory]
 ```
-Note that the exact path to the python distribution can differ between versions of Blender.
+Note that the exact path to the python distribution can differ.
 
 Example use:
 ```
 # Import blendgen
 import blendgen as bg
 
-# Reload the desired modules if you plan to make changes in the source files
+# Reload the modules if you plan to make changes in the source files
 import importlib
 importlib.reload(bg.blender_objects)
 importlib.reload(bg.utils)
