@@ -11,7 +11,7 @@ setup(
     description="A program that generates machine learning training image data using Blender.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://gitlab.com/openaoi/padim_implementation",
+    url="https://github.com/mattiasJohnson/BlendGen",
     project_urls={
         "Source Code": "https://github.com/mattiasJohnson/BlendGen",
     },
