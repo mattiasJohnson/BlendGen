@@ -19,7 +19,7 @@ def render(render_directory, camera, grid, n_images=1, resolution=[350,350]):
         # Randomize camera position and direction
         
 #         camera.moveRandomSphere(grid.center, grid.distance_to_edge, grid.distance_to_edge*1.1)
-        camera.move_abs_spherical_random(grid.center, grid.distance_to_edge, grid.distance_to_edge*1.1)
+        camera.move_abs_spherical_random(grid.center, grid.distance_to_edge*1.8, grid.distance_to_edge*2.2)
         camera.look_at(grid.center)
 
         ## Setup savepath

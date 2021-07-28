@@ -29,7 +29,7 @@ def main():
     parser.add_argument("--save-path", 
                         "-P", 
                         help = "(Optional) Path to directory where to save generated directory. \
-                            Default is directory where script wass run.", 
+                            Default is directory where script was run.", 
                         default = "."
                        )
     parser.add_argument("--save-name", 
