@@ -27,7 +27,7 @@ def getRandomCoordinates(x_range, y_range, z_range):
     return (x, y, z)
 
 
-def importProp(prop_path):
+def importProp(prop_path: str) -> str:
     old = redirectOutputStart()
     # Append objects to blend file's data (not linked to scene)
     with bpy.data.libraries.load(prop_path) as (data_from, data_to):
@@ -62,15 +62,65 @@ def importProp(prop_path):
     bpy.ops.object.join(ctx)
 
     # Rename and get reference to joined object
+    file_name = os.path.basename(prop_path)
+    prop_name = file_name[:-6]
     imported_obj = bpy.data.objects[objs_to_join[0].name] # Has inherited active obj's name
-    imported_obj.name = "imported_obj"
+    imported_obj.name = prop_name
 
     # Resize prop
     imported_obj.dimensions = imported_obj.dimensions/max(imported_obj.dimensions)
     
     redirectOutputEnd(old)
 
-    return imported_obj
+    return prop_name
+
+def importDirectory(dir_path: str) -> list[str]:
+    blender_files = [os.path.join(dir_path, f) for f in os.listdir(dir_path) if f.endswith(".blend")]
+    prop_name_list = [os.path.basename(path)[:-6] for path in blender_files]    
+    
+    # Quit if no files found
+    if len(blender_files) == 0:
+        print(f"ERROR: Directory {dir_path} does not contain any .blend files.")
+        print("Quitting BlendGen")
+        quit()
+        
+    # Import props
+    for prop_path in blender_files:
+        importProp(prop_path)
+    
+    return prop_name_list
+    
+def importProps(prop_path: str) -> list[str]:
+    """
+    Wrapper import function. Will either import whole directory or single file depending on prop_path.
+
+        Parameters:
+            prop_path (str): Full path to prop directory or single .blend file.
+
+        Returns:
+            prop_name_list (list(str)): List of imported props' names.
+    """
+    
+    
+    prop_name_list = []
+    if prop_path[-6:] == ".blend":
+        if os.path.isfile(prop_path):
+            prop_name = importProp(prop_path)
+            prop_name_list.append(prop_name)
+        else:
+            print(f"ERROR: File {prop_path} does not exist.")
+            print("Quitting BlendGen.")
+            quit()
+    else:
+        if os.path.exists(prop_path):
+            prop_name_list = importDirectory(prop_path)
+        else:
+            print(f"ERROR: Prop directory {prop_path} does not exist.")
+            print("Quitting BlendGen.")
+            quit()
+            
+    return prop_name_list
+
 
 def createSegmentationMaterial(n_instances: int) -> bpy.types.Material:
     

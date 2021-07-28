@@ -16,9 +16,7 @@ def main():
     n_images = int(argv[2])
     n_instances = int(argv[3])
     
-    prop_paths = load_prop_paths(prop_path)
-    
-    blendgen.generate(prop_paths, save_path, n_images, n_instances)
+    blendgen.generate(prop_path, save_path, n_images, n_instances)
     
 
 def load_prop_paths(prop_dir_path):
