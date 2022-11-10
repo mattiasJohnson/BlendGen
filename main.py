@@ -88,6 +88,9 @@ def main():
     subprocess.run(command, shell=True)
     #subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
+
+def chesscam():
+    print("testing some code")
     
 if __name__ == '__main__':
     main()

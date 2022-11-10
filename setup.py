@@ -23,6 +23,6 @@ setup(
     ],
     python_requires='>=3',
     entry_points = {
-        'console_scripts': ['blendgen=main:main'],
+        'console_scripts': ['blendgen=main:main', 'chesscam=main:chesscam'],
     }
 )
