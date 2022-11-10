@@ -15,8 +15,6 @@ def movePiece(name, pos):
     pos_vec = mathutils.Vector(pos)
     piece.location = pos_vec
 
-
-
 def getRandomBoard() -> Dict[str,str]:
     """
     Generates a random piece position dictionary.
@@ -34,7 +32,6 @@ def getRandomBoard() -> Dict[str,str]:
         positions[piece] = random_positions[idx]
 
     return positions
-
 
 class Board:
 
