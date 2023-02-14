@@ -10,14 +10,14 @@ import blendgen
 
 def main():
     # Get all arguments after --
-    argv = sys.argv[sys.argv.index("--") + 1:]
+    argv = sys.argv[sys.argv.index("--") + 1 :]
     prop_path = argv[0]
     save_path = argv[1]
     n_images = int(argv[2])
     n_instances = int(argv[3])
-    
+
     blendgen.generate(prop_path, save_path, n_images, n_instances)
-    
+
 
 def load_prop_paths(prop_dir_path):
     prop_paths = {}
@@ -26,7 +26,7 @@ def load_prop_paths(prop_dir_path):
             filepath = os.path.join(prop_dir_path, filename)
             prop_name = filename[:-6]
             prop_paths[prop_name] = filepath
-    
+
     return prop_paths
 
 

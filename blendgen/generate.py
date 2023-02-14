@@ -16,18 +16,18 @@ from .render import render
 
 
 def generate(prop_paths, save_path, n_images, n_instances):
-    #prop_path = list(prop_paths.values())[0]
+    # prop_path = list(prop_paths.values())[0]
     prop_path = prop_paths
     render_directory = os.path.join(save_path, "renders")
-    
-    newScene() 
-    
+
+    newScene()
+
     light = Light("test_light")
     light.data.energy = 80
 
     light2 = Light("test_light_2")
     light2.data.energy = 80
-    light2.move_rel_cartesian((3,1,0))
+    light2.move_rel_cartesian((3, 1, 0))
 
     # Import props
     prop_name_list = importProps(prop_path)
@@ -39,5 +39,5 @@ def generate(prop_paths, save_path, n_images, n_instances):
 
     # Render
     camera = Camera("test_camera")
-    
+
     render(render_directory, camera, grid, n_images=n_images)

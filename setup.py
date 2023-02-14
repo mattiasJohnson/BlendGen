@@ -21,8 +21,8 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: POSIX :: Linux",
     ],
-    python_requires='>=3',
-    entry_points = {
-        'console_scripts': ['blendgen=main:main'],
-    }
+    python_requires=">=3",
+    entry_points={
+        "console_scripts": ["blendgen=main:main"],
+    },
 )
