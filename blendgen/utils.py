@@ -6,20 +6,20 @@ import sys
 
 
 def newScene():
-    bpy.ops.scene.new(type="EMPTY") 
+    bpy.ops.scene.new(type="EMPTY")
 
 
 def deleteScene():
-    for obj in bpy.context.scene.objects: 
-        if obj.name[-1].isdigit() == True: 
+    for obj in bpy.context.scene.objects:
+        if obj.name[-1].isdigit() == True:
             obj.select_set(True)
-        else: 
+        else:
             obj.select_set(False)
 
     bpy.ops.object.delete()
-    bpy.ops.object.select_all(action='DESELECT')
-    
-    
+    bpy.ops.object.select_all(action="DESELECT")
+
+
 def getRandomCoordinates(x_range, y_range, z_range):
     x = random.uniform(x_range[0], x_range[1])
     y = random.uniform(y_range[0], y_range[1])
@@ -32,31 +32,31 @@ def importProp(prop_path: str) -> str:
     # Append objects to blend file's data (not linked to scene)
     with bpy.data.libraries.load(prop_path) as (data_from, data_to):
         data_to.objects = [name for name in data_from.objects]
-        print('Appended objects: ', data_to.objects)
+        print("Appended objects: ", data_to.objects)
 
     # Link objects (objects have to be linked to show up in the scene)
-    #for obj in data_to.objects:
+    # for obj in data_to.objects:
     #    bpy.context.collection.objects.link(obj)
 
     # Delete non-meshes (Cameras, light sources etc)
-    bpy.ops.object.select_all(action='DESELECT')
+    bpy.ops.object.select_all(action="DESELECT")
     objs_to_join = []
     for obj in data_to.objects:
         if obj.type == "MESH":
             objs_to_join.append(obj)
         else:
-            bpy.context.collection.objects.link(obj) # Link object to select and delete
+            bpy.context.collection.objects.link(obj)  # Link object to select and delete
             obj.select_set(True)
     bpy.ops.object.delete()
-    bpy.ops.object.select_all(action='DESELECT')
+    bpy.ops.object.select_all(action="DESELECT")
 
-    # JOIN OBJECTS  
+    # JOIN OBJECTS
     ## Get a context
     ctx = bpy.context.copy()
     ## One of the objects to join (have to have a active selection)
-    ctx['active_object'] = objs_to_join[0]
+    ctx["active_object"] = objs_to_join[0]
     ## Select all objects to join
-    ctx['selected_editable_objects'] = objs_to_join
+    ctx["selected_editable_objects"] = objs_to_join
 
     # Join
     bpy.ops.object.join(ctx)
@@ -64,32 +64,34 @@ def importProp(prop_path: str) -> str:
     # Rename and get reference to joined object
     file_name = os.path.basename(prop_path)
     prop_name = file_name[:-6]
-    imported_obj = bpy.data.objects[objs_to_join[0].name] # Has inherited active obj's name
+    imported_obj = bpy.data.objects[objs_to_join[0].name]  # Has inherited active obj's name
     imported_obj.name = prop_name
 
     # Resize prop
-    imported_obj.dimensions = imported_obj.dimensions/max(imported_obj.dimensions)
-    
+    imported_obj.dimensions = imported_obj.dimensions / max(imported_obj.dimensions)
+
     redirectOutputEnd(old)
 
     return prop_name
 
+
 def importDirectory(dir_path: str) -> list[str]:
     blender_files = [os.path.join(dir_path, f) for f in os.listdir(dir_path) if f.endswith(".blend")]
-    prop_name_list = [os.path.basename(path)[:-6] for path in blender_files]    
-    
+    prop_name_list = [os.path.basename(path)[:-6] for path in blender_files]
+
     # Quit if no files found
     if len(blender_files) == 0:
         print(f"ERROR: Directory {dir_path} does not contain any .blend files.")
         print("Quitting BlendGen")
         quit()
-        
+
     # Import props
     for prop_path in blender_files:
         importProp(prop_path)
-    
+
     return prop_name_list
-    
+
+
 def importProps(prop_path: str) -> list[str]:
     """
     Wrapper import function. Will either import whole directory or single file depending on prop_path.
@@ -100,8 +102,7 @@ def importProps(prop_path: str) -> list[str]:
         Returns:
             prop_name_list (list(str)): List of imported props' names.
     """
-    
-    
+
     prop_name_list = []
     if prop_path[-6:] == ".blend":
         if os.path.isfile(prop_path):
@@ -118,12 +119,12 @@ def importProps(prop_path: str) -> list[str]:
             print(f"ERROR: Prop directory {prop_path} does not exist.")
             print("Quitting BlendGen.")
             quit()
-            
+
     return prop_name_list
 
 
 def createSegmentationMaterial(n_instances: int) -> bpy.types.Material:
-    
+
     if n_instances >= 32:
         print("ERROR: Colorband cannot have 32 or more classes, setting to 31")
         n_instances = 31
@@ -136,8 +137,8 @@ def createSegmentationMaterial(n_instances: int) -> bpy.types.Material:
     # Nodes
     nodes = material.node_tree.nodes
     nodes.clear()
-    step_size = 1/n_instances
-    sep = 3 # Visual separation
+    step_size = 1 / n_instances
+    sep = 3  # Visual separation
 
     # Object Info node
     node_info = material.node_tree.nodes.new("ShaderNodeObjectInfo")
@@ -151,92 +152,98 @@ def createSegmentationMaterial(n_instances: int) -> bpy.types.Material:
     # Math node
     node_math = material.node_tree.nodes.new("ShaderNodeMath")
     node_math.location = (-200 * sep, 0)
-    node_math.operation = 'MULTIPLY_ADD'
-    node_math.inputs[2].default_value = step_size/2
+    node_math.operation = "MULTIPLY_ADD"
+    node_math.inputs[2].default_value = step_size / 2
 
     # ColorRamp node
     node_ramp = material.node_tree.nodes.new("ShaderNodeValToRGB")
     node_ramp.location = (-100 * sep, 0)
-    node_ramp.color_ramp.color_mode = 'RGB'
-    node_ramp.color_ramp.interpolation = 'CONSTANT'
+    node_ramp.color_ramp.color_mode = "RGB"
+    node_ramp.color_ramp.interpolation = "CONSTANT"
     # Split ColorRamp
-    step_size = 1/n_instances
-    for i in range(1,n_instances): # For three objects **two** splits are needed
-        node_ramp.color_ramp.elements.new(step_size*i)
-        
-    for i in range(0,n_instances):
+    step_size = 1 / n_instances
+    for i in range(1, n_instances):  # For three objects **two** splits are needed
+        node_ramp.color_ramp.elements.new(step_size * i)
+
+    for i in range(0, n_instances):
         node_ramp.color_ramp.elements[i].color = (random.random(), random.random(), random.random(), 1)
 
     # Shader node
-    node_shader = nodes.new('ShaderNodeEmission')
-    node_shader.location = (0,0)
+    node_shader = nodes.new("ShaderNodeEmission")
+    node_shader.location = (0, 0)
 
     # Material Output node
     node_output = nodes.new("ShaderNodeOutputMaterial")
-    node_output.location = (100*sep,0)
+    node_output.location = (100 * sep, 0)
 
     # Create connections between nodes
-    material.node_tree.links.new(node_info.outputs['Object Index'], node_math.inputs[0] )
-    material.node_tree.links.new(node_value.outputs['Value'], node_math.inputs[1] )
-    material.node_tree.links.new(node_math.outputs['Value'], node_ramp.inputs['Fac'])
-    material.node_tree.links.new(node_ramp.outputs['Color'], node_shader.inputs['Color'])
-    material.node_tree.links.new(node_shader.outputs['Emission'], node_output.inputs['Surface'])
-    
+    material.node_tree.links.new(node_info.outputs["Object Index"], node_math.inputs[0])
+    material.node_tree.links.new(node_value.outputs["Value"], node_math.inputs[1])
+    material.node_tree.links.new(node_math.outputs["Value"], node_ramp.inputs["Fac"])
+    material.node_tree.links.new(node_ramp.outputs["Color"], node_shader.inputs["Color"])
+    material.node_tree.links.new(node_shader.outputs["Emission"], node_output.inputs["Surface"])
+
     return material
+
 
 def createRenderDirectory(prop_name="", folder_name=None):
 
-        # Create /renders base directory
-        render_base_path = bpy.path.abspath("//../renders/")
-        if not os.path.exists(render_base_path):
-            os.makedirs(render_base_path)
-        
-        # Create render directory
-        render_directory = ""
-        if folder_name:
-            render_directory = f"{render_base_path}{folder_name}"
-        else:
-            subfolders = [ f.name for f in os.scandir(render_base_path) if f.is_dir() ]
-            max_num = 0
-            for folder in subfolders:
-                if folder[0:6] == "render":
-                    num_string = folder[6:9].lstrip('0')
-                    num = int(num_string)
-                    if num > max_num:
-                        max_num = num
-            render_num = max_num + 1
-            current_date = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-            render_directory = f"{render_base_path}render{render_num:03d}_{prop_name}_{current_date}"
-        
-        # Confirm overwrite if directory already exists
-        if os.path.exists(render_directory):
-            while (answer :=input(f"Directory {folder_name}/ already exists, continue and overwrite? (Y/n): ").lower() ) not in {"y", "n", ""}: pass
-            if answer == 'n':
-                print("Quitting.")
-                sys.exit(1)
-        else:
-            os.mkdir(render_directory)
-            
-        return render_directory
-    
-    
+    # Create /renders base directory
+    render_base_path = bpy.path.abspath("//../renders/")
+    if not os.path.exists(render_base_path):
+        os.makedirs(render_base_path)
+
+    # Create render directory
+    render_directory = ""
+    if folder_name:
+        render_directory = f"{render_base_path}{folder_name}"
+    else:
+        subfolders = [f.name for f in os.scandir(render_base_path) if f.is_dir()]
+        max_num = 0
+        for folder in subfolders:
+            if folder[0:6] == "render":
+                num_string = folder[6:9].lstrip("0")
+                num = int(num_string)
+                if num > max_num:
+                    max_num = num
+        render_num = max_num + 1
+        current_date = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+        render_directory = f"{render_base_path}render{render_num:03d}_{prop_name}_{current_date}"
+
+    # Confirm overwrite if directory already exists
+    if os.path.exists(render_directory):
+        while (
+            answer := input(f"Directory {folder_name}/ already exists, continue and overwrite? (Y/n): ").lower()
+        ) not in {"y", "n", ""}:
+            pass
+        if answer == "n":
+            print("Quitting.")
+            sys.exit(1)
+    else:
+        os.mkdir(render_directory)
+
+    return render_directory
+
+
 # Redirect output (https://blender.stackexchange.com/a/44563/69661)
 def redirectOutputStart():
-    logfile = '.blenderlog'
-    open(logfile, 'a').close()
+    logfile = ".blenderlog"
+    open(logfile, "a").close()
     old = os.dup(1)
     sys.stdout.flush()
     os.close(1)
     os.open(logfile, os.O_WRONLY)
     return old
 
+
 def redirectOutputEnd(old) -> None:
     os.close(1)
     os.dup(old)
     os.close(old)
-    
+
+
 # Print iterations progress (https://stackoverflow.com/questions/3173320/text-progress-bar-in-the-console)
-def printProgressBar(iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
+def printProgressBar(iteration, total, prefix="", suffix="", decimals=1, length=100, fill="█", printEnd="\r"):
     """
     Call in a loop to create terminal progress bar
     @params:
@@ -251,8 +258,8 @@ def printProgressBar(iteration, total, prefix = '', suffix = '', decimals = 1, l
     """
     percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
     filledLength = int(length * iteration // total)
-    bar = fill * filledLength + '-' * (length - filledLength)
-    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+    bar = fill * filledLength + "-" * (length - filledLength)
+    print(f"\r{prefix} |{bar}| {percent}% {suffix}", end=printEnd)
     # Print New Line on Complete
-    if iteration == total: 
+    if iteration == total:
         print()
