@@ -1,11 +1,11 @@
-import sys
 import os
+import sys
 
-THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-if not THIS_DIR in sys.path:
-    sys.path.append(THIS_DIR)
+DIR_THIS_FILE = os.path.dirname(os.path.abspath(__file__))
+if DIR_THIS_FILE not in sys.path:
+    sys.path.append(DIR_THIS_FILE)
 
-import blendgen
+import blendgen  # noqa: E402 I001
 
 
 def main():

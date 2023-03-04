@@ -1,8 +1,10 @@
-from typing import Tuple, List
+import math
+import random
+from math import acos, atan2, cos, pi, radians, sin
+from typing import List, Tuple
+
 import bpy
 import mathutils
-import random
-import math
 import numpy as np
 
 
@@ -33,13 +35,13 @@ class BlenderObject:
         r = r_prev + r_diff
         theta = atan2(y, x) + theta_diff
         phi = acos(z / r_prev) + phi_diff
-        self.set_loc((r * math.sin(phi) * math.cos(theta), r * math.sin(phi) * math.sin(theta), r * math.cos(phi)))
+        self.set_loc((r * sin(phi) * cos(theta), r * sin(phi) * sin(theta), r * cos(phi)))
 
     def move_abs_spherical(self, coo_spherical: Tuple[float]) -> None:
         r, theta, phi = coo_spherical
         theta = radians(theta)
         phi = radians(phi)
-        self.set_loc((r * math.sin(phi) * math.cos(theta), r * math.sin(phi) * math.sin(theta), r * math.cos(phi)))
+        self.set_loc((r * sin(phi) * cos(theta), r * sin(phi) * sin(theta), r * cos(phi)))
 
     def rotate(self, angles: Tuple[float]) -> None:
         self.object.rotation_mode = "XYZ"
@@ -47,19 +49,17 @@ class BlenderObject:
         self.object.rotation_euler = (x, y, z)
 
     def move_abs_spherical_random(self, center, r_min, r_max) -> None:
-        theta = random.random() * math.pi
-        phi = random.random() * 2 * math.pi
+        theta = random.random() * pi
+        phi = random.random() * 2 * pi
         r = random.uniform(r_min, r_max)
-        random_coordinate = np.array(
-            (r * math.sin(phi) * math.cos(theta), r * math.sin(phi) * math.sin(theta), r * math.cos(phi))
-        )
+        random_coordinate = np.array((r * sin(phi) * cos(theta), r * sin(phi) * sin(theta), r * cos(phi)))
         new_coordinate = random_coordinate + np.array(center)
         self.move_abs_cartesian(new_coordinate)
 
     def rotate_random(self) -> None:
-        x = random.random() * 2 * math.pi
-        y = random.random() * 2 * math.pi
-        z = random.random() * 2 * math.pi
+        x = random.random() * 2 * pi
+        y = random.random() * 2 * pi
+        z = random.random() * 2 * pi
         self.rotate((x, y, z))
 
     def look_at(self, point: Tuple[float]) -> None:

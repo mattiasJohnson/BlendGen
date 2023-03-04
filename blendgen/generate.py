@@ -1,18 +1,8 @@
-import bpy
-
-import sys
 import os
-import mathutils
-import random
-import math
-from math import sin, cos
-import importlib
-
-import numpy
 
 from .blender_objects import Camera, Grid, Light
-from .utils import createSegmentationMaterial, deleteScene, importProps, createRenderDirectory, newScene
 from .render import render
+from .utils import createSegmentationMaterial, importProps, newScene
 
 
 def generate(prop_paths, save_path, n_images, n_instances):

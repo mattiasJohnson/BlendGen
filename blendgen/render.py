@@ -1,10 +1,9 @@
 import bpy
-import os
-import sys
-from .utils import redirectOutputStart, redirectOutputEnd, printProgressBar
+
+from .utils import printProgressBar, redirectOutputEnd, redirectOutputStart
 
 
-def render(render_directory, camera, grid, n_images=1, resolution=[350, 350]):
+def render(render_directory, camera, grid, n_images=1, resolution=(350, 350)):
 
     # Setup camera
     bpy.context.scene.camera = camera.object  # Set camera as render camera
@@ -18,7 +17,7 @@ def render(render_directory, camera, grid, n_images=1, resolution=[350, 350]):
     for i in range(n_images):
         # Randomize camera position and direction
 
-        #         camera.moveRandomSphere(grid.center, grid.distance_to_edge, grid.distance_to_edge*1.1)
+        # camera.moveRandomSphere(grid.center, grid.distance_to_edge, grid.distance_to_edge*1.1)
         camera.move_abs_spherical_random(grid.center, grid.distance_to_edge * 1.8, grid.distance_to_edge * 2.2)
         camera.look_at(grid.center)
 

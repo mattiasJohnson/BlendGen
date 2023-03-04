@@ -1,8 +1,9 @@
-import bpy
-import random
-import os
 import datetime
+import os
+import random
 import sys
+
+import bpy
 
 
 def newScene():
@@ -11,7 +12,7 @@ def newScene():
 
 def deleteScene():
     for obj in bpy.context.scene.objects:
-        if obj.name[-1].isdigit() == True:
+        if obj.name[-1].isdigit() is True:
             obj.select_set(True)
         else:
             obj.select_set(False)
