@@ -1,0 +1,17 @@
+[tool.ruff]
+line-length = 120
+
+select = [
+# Originates from pyflakes
+"F",
+# isort
+"I001",
+# Subset of pydocstyle
+"E",
+"W",
+# flake8-bugbear
+"B",
+]
+
+[tool.black]
+line-length = 120
